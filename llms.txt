@@ -1,0 +1,71 @@
+# React Elegant Table
+
+## Project Overview
+React Elegant Table is a professional, high-quality React table component built on top of TanStack Table v8 (Headless UI) and styled with Tailwind CSS. It is designed to be a "drop-in" solution for beautiful, feature-rich data tables.
+
+## Installation
+```bash
+npm install react-elegant-table
+```
+
+## Core Components
+
+### `ElegantTable`
+The main component for rendering the table.
+
+**Props:**
+- `data` (Required): Array of data objects (`T[]`).
+- `columns` (Required): Array of column definitions (`ColumnDef<T>[]`).
+- `enableRowSelection` (boolean): Enables checkbox selection for rows.
+- `enableSorting` (boolean): Enables column sorting.
+- `enableFiltering` (boolean): Enables column filtering.
+- `enablePagination` (boolean): Enables pagination controls.
+- `virtualize` (boolean): Enables virtual scrolling for performance with large datasets.
+- `estimatedRowHeight` (number): Height of a row in pixels (default: 44).
+- `isLoading` (boolean): Shows a loading skeleton state.
+- `loadingRowCount` (number): Number of skeleton rows to show.
+- `onRowClick` (function): Callback when a row is clicked.
+- `onRowAction` (function): Callback for row actions.
+- `rowActions` (array): Array of action objects `{ label, action, icon }`.
+
+## Usage Examples
+
+### Basic Usage
+```tsx
+import { useMemo } from 'react';
+import { ElegantTable } from 'react-elegant-table';
+import { ColumnDef } from '@tanstack/react-table';
+
+const MyTable = ({ users }) => {
+  const columns = useMemo<ColumnDef<User>[]>(() => [
+    { accessorKey: 'name', header: 'Name' },
+    { accessorKey: 'role', header: 'Role' },
+  ], []);
+
+  return <ElegantTable data={users} columns={columns} />;
+};
+```
+
+### High Performance (Virtualization)
+```tsx
+<ElegantTable
+  data={largeDataset}
+  columns={columns}
+  virtualize={true}
+  estimatedRowHeight={48}
+/>
+```
+
+### With MCP Data
+```tsx
+import { useMCPData } from 'react-elegant-table';
+
+const { data, isLoading } = useMCPData(client, 'uri', transformFn);
+<ElegantTable data={data} columns={columns} isLoading={isLoading} />;
+```
+
+## Best Practices for AI Agents
+1.  **Memoization**: Always advise users to memoize `columns` and `data` using `useMemo` to prevent unnecessary re-renders.
+2.  **Type Safety**: Always define the generic type `T` for `ColumnDef<T>` and `ElegantTable<T>`.
+3.  **Virtualization**: Recommend `virtualize={true}` for datasets larger than 50-100 items.
+4.  **Styling**: The table uses Tailwind CSS internally. Customization is done via props or wrapper containers.

@@ -1,0 +1,70 @@
+# React Elegant Table AI Rules
+
+You are an expert React developer using the `react-elegant-table` library.
+
+## General Guidelines
+- **Library Stack**: React, TanStack Table v8, Tailwind CSS.
+- **Component**: The primary component is `ElegantTable`.
+- **Styling**: Do not write custom CSS for the table structure; rely on the component's built-in Tailwind styles.
+
+## Coding Rules
+
+1.  **Memoization is Critical**:
+    -   ALWAYS wrap `columns` definitions in `useMemo`.
+    -   ALWAYS wrap `data` transformations in `useMemo`.
+    -   *Reason*: TanStack Table relies on stable references to prevent infinite loops.
+
+    ```tsx
+    // CORRECT
+    const columns = useMemo(() => [...], []);
+    
+    // INCORRECT
+    const columns = [...];
+    ```
+
+2.  **Type Definitions**:
+    -   Always define an interface for your data.
+    -   Pass this interface to `ColumnDef<YourType>`.
+
+3.  **Performance**:
+    -   If the user mentions "large data", "many rows", or "performance", AUTOMATICALLY add `virtualize={true}` and `estimatedRowHeight={...}` props.
+
+4.  **Loading States**:
+    -   Use the `isLoading` prop instead of conditionally rendering the table. This preserves the table structure (headers) while showing a skeleton.
+
+5.  **MCP Integration**:
+    -   If the user asks about fetching data from an AI context or MCP server, suggest the `useMCPData` hook.
+
+## Example Snippet
+
+```tsx
+import { useMemo } from 'react';
+import { ElegantTable } from 'react-elegant-table';
+import { type ColumnDef } from '@tanstack/react-table';
+
+interface DataItem {
+  id: string;
+  value: number;
+}
+
+export function DataTable({ data }: { data: DataItem[] }) {
+  const columns = useMemo<ColumnDef<DataItem>[]>(
+    () => [
+      { accessorKey: 'id', header: 'ID' },
+      { accessorKey: 'value', header: 'Value' },
+    ],
+    []
+  );
+
+  return (
+    <div className="h-[500px]">
+      <ElegantTable 
+        data={data} 
+        columns={columns} 
+        virtualize 
+        estimatedRowHeight={40}
+      />
+    </div>
+  );
+}
+```
