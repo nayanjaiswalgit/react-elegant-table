@@ -55,6 +55,9 @@ interface ElegantTableProps<T> {
   // Loading state
   isLoading?: boolean;
   loadingRowCount?: number;
+  // Table layout control
+  tableLayout?: 'fixed' | 'auto';
+  useFixedWidth?: boolean;
 }
 
 export function ElegantTable<T>({
@@ -64,7 +67,7 @@ export function ElegantTable<T>({
   onRowAction,
   enableRowSelection = false,
   onSelectionChange,
-  rowSelection = {},
+  rowSelection,
   rowActions = [],
   toolbar,
   emptyMessage = 'No data available',
@@ -80,10 +83,15 @@ export function ElegantTable<T>({
   manualSorting,
   isLoading = false,
   loadingRowCount = 5,
+  tableLayout = 'fixed',
+  useFixedWidth = true,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+
+  // Stable default for rowSelection to prevent infinite renders
+  const stableRowSelection = useMemo(() => rowSelection ?? {}, [rowSelection]);
 
   // Custom hooks for cleaner state management
   const { columnSizing, onColumnSizingChange: handleColumnSizingChange } = useColumnSizing(
@@ -97,7 +105,7 @@ export function ElegantTable<T>({
     hasSelection,
   } = useRowSelection({
     enabled: enableRowSelection,
-    initialSelection: rowSelection,
+    initialSelection: stableRowSelection,
     onSelectionChange,
     debounceMs: selectionChangeDebounceMs,
   });
@@ -237,12 +245,20 @@ export function ElegantTable<T>({
       />
 
       {/* Table Container */}
-      <div ref={containerRef} className="flex-1 overflow-auto min-h-0">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-auto min-h-0"
+        style={{
+          willChange: virtualize ? 'scroll-position' : 'auto',
+          transform: 'translateZ(0)', // Force GPU acceleration
+        }}
+      >
         <table
-          className="w-full min-w-max border-separate border-spacing-0"
+          className="w-full border-separate border-spacing-0"
           style={{
-            tableLayout: 'fixed',
-            width: `${table.getTotalSize()}px`,
+            tableLayout,
+            contain: 'layout style paint',
+            ...(useFixedWidth && tableLayout === 'fixed' ? { minWidth: `${table.getTotalSize()}px` } : {}),
           }}
         >
           <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">

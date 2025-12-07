@@ -40,7 +40,7 @@ export function ActionMenu({
             e.stopPropagation();
             onActionClick(action.action);
           }}
-          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-2 transition-colors first:rounded-t-lg last:rounded-b-lg"
+          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-2 transition-colors duration-100 ease-out first:rounded-t-lg last:rounded-b-lg"
         >
           {action.icon}
           <span className="text-gray-700 dark:text-gray-300">{action.label}</span>

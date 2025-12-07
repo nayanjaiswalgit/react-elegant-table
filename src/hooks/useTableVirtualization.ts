@@ -19,7 +19,7 @@ export function useTableVirtualization(
   rowCount: number,
   config: VirtualizationConfig,
 ): VirtualizationResult {
-  const { enabled, rowHeight, overscan = 6 } = config;
+  const { enabled, rowHeight, overscan = 10 } = config;
   const containerRef = useRef<HTMLDivElement>(null!);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
