@@ -51,6 +51,7 @@ export function useMCPData<T>(
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceUri]);
 
   return { data, isLoading, error, refresh: fetchData };

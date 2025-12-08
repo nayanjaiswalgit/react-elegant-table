@@ -24,7 +24,7 @@ export function useRowSelection({
   const initialSelectionJson = JSON.stringify(initialSelection || {});
   useEffect(() => {
     const newSelection = JSON.parse(initialSelectionJson);
-    setInternalSelection(prev => {
+    setInternalSelection((prev) => {
       // Only update if actually different
       if (JSON.stringify(prev) !== initialSelectionJson) {
         return newSelection;

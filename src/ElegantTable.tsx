@@ -29,7 +29,7 @@ import {
   useColumnSizing,
 } from './hooks';
 
-interface ElegantTableProps<T> {
+export interface ElegantTableProps<T> {
   data: T[];
   columns: ColumnDef<T, unknown>[];
   onRowClick?: (row: T) => void;
@@ -58,6 +58,9 @@ interface ElegantTableProps<T> {
   // Table layout control
   tableLayout?: 'fixed' | 'auto';
   useFixedWidth?: boolean;
+  // Actions column header customization
+  actionsHeader?: React.ReactNode;
+  actionsColumnWidth?: number;
 }
 
 export function ElegantTable<T>({
@@ -85,6 +88,8 @@ export function ElegantTable<T>({
   loadingRowCount = 5,
   tableLayout = 'fixed',
   useFixedWidth = true,
+  actionsHeader,
+  actionsColumnWidth = 48,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -258,7 +263,9 @@ export function ElegantTable<T>({
           style={{
             tableLayout,
             contain: 'layout style paint',
-            ...(useFixedWidth && tableLayout === 'fixed' ? { minWidth: `${table.getTotalSize()}px` } : {}),
+            ...(useFixedWidth && tableLayout === 'fixed'
+              ? { minWidth: `${table.getTotalSize()}px` }
+              : {}),
           }}
         >
           <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
@@ -273,7 +280,14 @@ export function ElegantTable<T>({
                     {header.isPlaceholder ? null : <ColumnHeader header={header} />}
                   </th>
                 ))}
-                {rowActions.length > 0 && <th className="w-12 bg-gray-50 dark:bg-gray-800" />}
+                {rowActions.length > 0 && (
+                  <th
+                    className="bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400 text-center"
+                    style={{ width: `${actionsColumnWidth}px` }}
+                  >
+                    {actionsHeader}
+                  </th>
+                )}
               </tr>
             ))}
           </thead>

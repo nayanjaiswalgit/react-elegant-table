@@ -25,7 +25,6 @@ if (typeof document !== 'undefined') {
   }
 }
 
-
 interface TableRowProps<T> {
   row: TanStackRow<T>;
   rowHeight: number;
@@ -75,9 +74,11 @@ function TableRowComponent<T>({
         willChange: isHovered || isSelected ? 'background-color' : 'auto',
         animation: 'fadeIn 0.15s ease-out',
       }}
-      className={`group border-b border-gray-100 dark:border-gray-800 transition-colors duration-75 ease-out ${onRowClick ? 'cursor-pointer' : ''
-        } ${isHovered ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''} ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-        }`}
+      className={`group border-b border-gray-100 dark:border-gray-800 transition-colors duration-75 ease-out ${
+        onRowClick ? 'cursor-pointer' : ''
+      } ${isHovered ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''} ${
+        isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+      }`}
     >
       {row.getVisibleCells().map((cell) => (
         <td
@@ -86,8 +87,9 @@ function TableRowComponent<T>({
           style={{ width: `${cell.column.getSize()}px` }}
         >
           <div
-            className={`${cell.column.id === 'select' ? '' : 'px-3 py-2'
-              } overflow-hidden text-ellipsis whitespace-nowrap`}
+            className={`${
+              cell.column.id === 'select' ? '' : 'px-3 py-2'
+            } overflow-hidden text-ellipsis whitespace-nowrap`}
           >
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </div>
