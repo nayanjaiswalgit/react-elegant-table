@@ -12,6 +12,7 @@ import {
   VisibilityState,
   RowSelectionState,
   ExpandedState,
+  ColumnPinningState,
   type OnChangeFn,
   type Row,
 } from '@tanstack/react-table';
@@ -77,6 +78,10 @@ interface ElegantTableProps<T> {
   renderExpandedContent?: (row: T) => React.ReactNode;
   expanded?: ExpandedState;
   onExpandedChange?: OnChangeFn<ExpandedState>;
+  // Column Pinning
+  enableColumnPinning?: boolean;
+  columnPinning?: ColumnPinningState;
+  onColumnPinningChange?: OnChangeFn<ColumnPinningState>;
 }
 
 export function ElegantTable<T>({
@@ -114,6 +119,9 @@ export function ElegantTable<T>({
   renderExpandedContent,
   expanded,
   onExpandedChange,
+  enableColumnPinning = false,
+  columnPinning,
+  onColumnPinningChange,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -121,6 +129,10 @@ export function ElegantTable<T>({
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [internalExpanded, setInternalExpanded] = useState<ExpandedState>({});
+  const [internalColumnPinning, setInternalColumnPinning] = useState<ColumnPinningState>({
+    left: [],
+    right: [],
+  });
 
   // Custom hooks for cleaner state management
   const { columnSizing, onColumnSizingChange: handleColumnSizingChange } = useColumnSizing(
@@ -212,6 +224,7 @@ export function ElegantTable<T>({
       columnSizing,
       columnOrder,
       expanded: expanded ?? internalExpanded,
+      columnPinning: columnPinning ?? internalColumnPinning,
     },
     onSortingChange,
     onColumnFiltersChange: setColumnFilters,
@@ -221,11 +234,13 @@ export function ElegantTable<T>({
     onColumnSizingChange: handleColumnSizingChange,
     onColumnOrderChange: handleColumnOrderChange,
     onExpandedChange: onExpandedChange ?? setInternalExpanded,
+    onColumnPinningChange: onColumnPinningChange ?? setInternalColumnPinning,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     enableRowSelection,
+    enableColumnPinning,
     columnResizeMode: 'onChange',
     enableColumnResizing: true,
     defaultColumn: {
@@ -345,12 +360,22 @@ export function ElegantTable<T>({
           <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-gray-200 dark:border-gray-700">
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    style={{ width: `${header.getSize()}px`, position: 'relative' }}
-                    className="border-r border-gray-100 dark:border-gray-800 last:border-r-0"
-                  >
+                {headerGroup.headers.map((header) => {
+                  const isPinned = header.column.getIsPinned();
+                  return (
+                    <th
+                      key={header.id}
+                      style={{
+                        width: `${header.getSize()}px`,
+                        position: isPinned ? 'sticky' : 'relative',
+                        left: isPinned === 'left' ? `${header.getStart('left')}px` : undefined,
+                        right: isPinned === 'right' ? `${header.getAfter('right')}px` : undefined,
+                        zIndex: isPinned ? 11 : undefined,
+                      }}
+                      className={`border-r border-gray-100 dark:border-gray-800 last:border-r-0 ${
+                        isPinned ? 'bg-gray-50 dark:bg-gray-800' : ''
+                      }`}
+                    >
                     {header.isPlaceholder ? null : (
                       <ColumnHeader
                         header={header}
@@ -360,10 +385,12 @@ export function ElegantTable<T>({
                         onColumnDrop={handleColumnDrop}
                         isDragging={draggedColumn === header.column.id}
                         isDragOver={dragOverColumn === header.column.id}
+                        enableColumnPinning={enableColumnPinning}
                       />
                     )}
-                  </th>
-                ))}
+                    </th>
+                  );
+                })}
                 {rowActions.length > 0 && <th className="w-12 bg-gray-50 dark:bg-gray-800" />}
               </tr>
             ))}

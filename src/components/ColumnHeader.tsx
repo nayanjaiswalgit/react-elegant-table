@@ -1,5 +1,5 @@
-import { memo, useState } from 'react';
-import { ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import { memo, useState, useRef, useEffect } from 'react';
+import { ChevronUp, ChevronDown, GripVertical, Pin, PinOff } from 'lucide-react';
 import type { Header } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 
@@ -11,6 +11,7 @@ interface ColumnHeaderProps<T> {
   onColumnDrop?: (columnId: string) => void;
   isDragging?: boolean;
   isDragOver?: boolean;
+  enableColumnPinning?: boolean;
 }
 
 function ColumnHeaderComponent<T>({
@@ -21,6 +22,7 @@ function ColumnHeaderComponent<T>({
   onColumnDrop,
   isDragging = false,
   isDragOver = false,
+  enableColumnPinning = false,
 }: ColumnHeaderProps<T>) {
   const canSort = header.column.getCanSort();
   const isSorted = header.column.getIsSorted();
@@ -29,6 +31,9 @@ function ColumnHeaderComponent<T>({
   const rawHeader = header.column.columnDef.header;
   const isStringHeader = typeof rawHeader === 'string';
   const [showDragHandle, setShowDragHandle] = useState(false);
+  const [showPinMenu, setShowPinMenu] = useState(false);
+  const pinMenuRef = useRef<HTMLDivElement>(null);
+  const isPinned = header.column.getIsPinned();
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -44,6 +49,34 @@ function ColumnHeaderComponent<T>({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     onColumnDrop?.(header.column.id);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (pinMenuRef.current && !pinMenuRef.current.contains(event.target as Node)) {
+        setShowPinMenu(false);
+      }
+    }
+
+    if (showPinMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showPinMenu]);
+
+  const handlePinLeft = () => {
+    header.column.pin('left');
+    setShowPinMenu(false);
+  };
+
+  const handlePinRight = () => {
+    header.column.pin('right');
+    setShowPinMenu(false);
+  };
+
+  const handleUnpin = () => {
+    header.column.pin(false);
+    setShowPinMenu(false);
   };
 
   return (
@@ -86,6 +119,57 @@ function ColumnHeaderComponent<T>({
       ) : (
         <div className="flex-1 px-3 py-2 text-[10px] font-medium text-gray-400 dark:text-gray-500">
           {flexRender(rawHeader, header.getContext())}
+        </div>
+      )}
+
+      {/* Pin Menu */}
+      {enableColumnPinning && (
+        <div className="relative flex-shrink-0" ref={pinMenuRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowPinMenu(!showPinMenu);
+            }}
+            className={`p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors ${
+              isPinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+            title="Pin column"
+          >
+            {isPinned ? (
+              <Pin className="w-3 h-3 text-blue-500 dark:text-blue-400" />
+            ) : (
+              <PinOff className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+            )}
+          </button>
+
+          {showPinMenu && (
+            <div className="absolute top-full right-0 mt-1 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+              <div className="py-1">
+                <button
+                  onClick={handlePinLeft}
+                  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  disabled={isPinned === 'left'}
+                >
+                  Pin Left
+                </button>
+                <button
+                  onClick={handlePinRight}
+                  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  disabled={isPinned === 'right'}
+                >
+                  Pin Right
+                </button>
+                {isPinned && (
+                  <button
+                    onClick={handleUnpin}
+                    className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-t border-gray-200 dark:border-gray-700"
+                  >
+                    Unpin
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

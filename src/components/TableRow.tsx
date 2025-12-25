@@ -93,11 +93,21 @@ function TableRowComponent<T>({
         const isFirstDataCell = cellIndex === (row.getVisibleCells()[0]?.column.id === 'select' ? 1 : 0);
         const shouldShowExpandButton = enableRowExpansion && showExpandButton && isFirstDataCell && !isEditing;
 
+        const isPinned = cell.column.getIsPinned();
+
         return (
           <td
             key={cell.id}
-            className="border-r border-gray-100 dark:border-gray-800 last:border-r-0"
-            style={{ width: `${cell.column.getSize()}px` }}
+            className={`border-r border-gray-100 dark:border-gray-800 last:border-r-0 ${
+              isPinned ? 'bg-white dark:bg-gray-900' : ''
+            }`}
+            style={{
+              width: `${cell.column.getSize()}px`,
+              position: isPinned ? 'sticky' : undefined,
+              left: isPinned === 'left' ? `${cell.column.getStart('left')}px` : undefined,
+              right: isPinned === 'right' ? `${cell.column.getAfter('right')}px` : undefined,
+              zIndex: isPinned ? 1 : undefined,
+            }}
             onDoubleClick={(e) => handleCellDoubleClick(cell, e)}
           >
             <div
