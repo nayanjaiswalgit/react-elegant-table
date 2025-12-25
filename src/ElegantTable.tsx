@@ -13,6 +13,7 @@ import {
   RowSelectionState,
   ExpandedState,
   ColumnPinningState,
+  flexRender,
   type OnChangeFn,
   type Row,
 } from '@tanstack/react-table';
@@ -92,6 +93,8 @@ interface ElegantTableProps<T> {
   globalSearchPlaceholder?: string;
   // Column Filtering
   enableColumnFiltering?: boolean;
+  // Footer
+  enableFooter?: boolean;
 }
 
 export function ElegantTable<T>({
@@ -137,6 +140,7 @@ export function ElegantTable<T>({
   enableGlobalSearch = false,
   globalSearchPlaceholder,
   enableColumnFiltering = false,
+  enableFooter = false,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -521,6 +525,35 @@ export function ElegantTable<T>({
               </>
             )}
           </tbody>
+          {enableFooter && (
+            <tfoot className="sticky bottom-0 bg-gray-50 dark:bg-gray-800 border-t-2 border-gray-300 dark:border-gray-600">
+              {table.getFooterGroups().map((footerGroup) => (
+                <tr key={footerGroup.id}>
+                  {footerGroup.headers.map((header) => {
+                    const isPinned = header.column.getIsPinned();
+                    return (
+                      <th
+                        key={header.id}
+                        style={{
+                          width: `${header.getSize()}px`,
+                          position: isPinned ? 'sticky' : 'relative',
+                          left: isPinned === 'left' ? `${header.getStart('left')}px` : undefined,
+                          right: isPinned === 'right' ? `${header.getAfter('right')}px` : undefined,
+                          zIndex: isPinned ? 11 : undefined,
+                        }}
+                        className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 last:border-r-0"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.footer, header.getContext())}
+                      </th>
+                    );
+                  })}
+                  {rowActions.length > 0 && <th className="w-12" />}
+                </tr>
+              ))}
+            </tfoot>
+          )}
         </table>
 
         {/* Load Older Button */}
