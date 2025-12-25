@@ -19,10 +19,19 @@ export function useRowSelection({
   );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync with external state
+  // Sync with external state - use JSON comparison to avoid infinite loops
+  // when initialSelection is recreated as a new object on each render
+  const initialSelectionJson = JSON.stringify(initialSelection || {});
   useEffect(() => {
-    setInternalSelection(initialSelection || {});
-  }, [initialSelection]);
+    const newSelection = JSON.parse(initialSelectionJson);
+    setInternalSelection((prev) => {
+      // Only update if actually different
+      if (JSON.stringify(prev) !== initialSelectionJson) {
+        return newSelection;
+      }
+      return prev;
+    });
+  }, [initialSelectionJson]);
 
   const handleSelectionChange = useCallback(
     (updater: RowSelectionState | ((prev: RowSelectionState) => RowSelectionState)) => {

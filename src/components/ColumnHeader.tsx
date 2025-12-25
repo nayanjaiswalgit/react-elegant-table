@@ -114,7 +114,7 @@ function ColumnHeaderComponent<T>({
               ) : isSorted === 'desc' ? (
                 <ChevronDown className="w-3 h-3 text-gray-500 dark:text-gray-400" />
               ) : (
-                <ChevronUp className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" />
+                <ChevronUp className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity duration-150 ease-out" />
               )}
             </span>
           )}
@@ -184,7 +184,7 @@ function ColumnHeaderComponent<T>({
         <div
           onMouseDown={header.getResizeHandler()}
           onTouchStart={header.getResizeHandler()}
-          className={`absolute right-0 top-0 bottom-0 w-[1px] cursor-col-resize z-20 select-none transition-colors ${
+          className={`absolute right-0 top-0 bottom-0 w-[1px] cursor-col-resize z-20 select-none transition-colors duration-100 ease-out ${
             isResizing
               ? 'bg-blue-500 dark:bg-blue-400'
               : 'bg-transparent hover:bg-gray-300 dark:hover:bg-gray-600'

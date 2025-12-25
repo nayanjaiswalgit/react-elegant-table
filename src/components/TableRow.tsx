@@ -6,6 +6,26 @@ import { HStack } from '../ui/Layout';
 import type React from 'react';
 import { EditableCell, CellEditType } from './EditableCell';
 
+// Inject CSS keyframes for fade-in animation
+if (typeof document !== 'undefined') {
+  const styleId = 'table-row-animations';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
 interface TableRowProps<T> {
   row: TanStackRow<T>;
   rowHeight: number;
@@ -80,8 +100,13 @@ function TableRowComponent<T>({
       onPointerCancel={onPointerCancel}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      style={{ height: `${rowHeight}px`, contain: 'layout' }}
-      className={`group border-b border-gray-100 dark:border-gray-800 transition-colors ${
+      style={{
+        height: `${rowHeight}px`,
+        contain: 'layout style paint',
+        willChange: isHovered || isSelected ? 'background-color' : 'auto',
+        animation: 'fadeIn 0.15s ease-out',
+      }}
+      className={`group border-b border-gray-100 dark:border-gray-800 transition-colors duration-75 ease-out ${
         onRowClick ? 'cursor-pointer' : ''
       } ${isHovered ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''} ${
         isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
@@ -156,7 +181,7 @@ function TableRowComponent<T>({
                 e.stopPropagation();
                 onMenuToggle?.(row.id, null);
               }}
-              className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors duration-100 ease-out"
               aria-label="Row actions menu"
             >
               <MoreHorizontal className="w-4 h-4 text-gray-500 dark:text-gray-400 rotate-90" />

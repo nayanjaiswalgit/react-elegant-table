@@ -41,7 +41,7 @@ import { GlobalSearch } from './components/GlobalSearch';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { MobileCard } from './components/MobileCard';
 
-interface ElegantTableProps<T> {
+export interface ElegantTableProps<T> {
   data: T[];
   columns: ColumnDef<T, unknown>[];
   onRowClick?: (row: T) => void;
@@ -104,6 +104,12 @@ interface ElegantTableProps<T> {
   // Density
   density?: 'compact' | 'normal' | 'comfortable';
   onDensityChange?: (density: 'compact' | 'normal' | 'comfortable') => void;
+  // Table layout control
+  tableLayout?: 'fixed' | 'auto';
+  useFixedWidth?: boolean;
+  // Actions column header customization
+  actionsHeader?: React.ReactNode;
+  actionsColumnWidth?: number;
 }
 
 export function ElegantTable<T>({
@@ -113,7 +119,7 @@ export function ElegantTable<T>({
   onRowAction,
   enableRowSelection = false,
   onSelectionChange,
-  rowSelection = {},
+  rowSelection,
   rowActions = [],
   toolbar,
   emptyMessage = 'No data available',
@@ -154,6 +160,10 @@ export function ElegantTable<T>({
   enableMobileView = false,
   density = 'normal',
   onDensityChange,
+  tableLayout = 'fixed',
+  useFixedWidth = true,
+  actionsHeader,
+  actionsColumnWidth = 48,
 }: ElegantTableProps<T>) {
   // Density-based row heights
   const densityHeights = {
@@ -173,6 +183,9 @@ export function ElegantTable<T>({
     right: [],
   });
   const [globalFilter, setGlobalFilter] = useState('');
+
+  // Stable default for rowSelection to prevent infinite renders
+  const stableRowSelection = useMemo(() => rowSelection ?? {}, [rowSelection]);
 
   // Custom hooks for cleaner state management
   const { columnSizing, onColumnSizingChange: handleColumnSizingChange } = useColumnSizing(
@@ -199,7 +212,7 @@ export function ElegantTable<T>({
     hasSelection,
   } = useRowSelection({
     enabled: enableRowSelection,
-    initialSelection: rowSelection,
+    initialSelection: stableRowSelection,
     onSelectionChange,
     debounceMs: selectionChangeDebounceMs,
   });
@@ -432,12 +445,22 @@ export function ElegantTable<T>({
       )}
 
       {/* Table Container */}
-      <div ref={containerRef} className={`flex-1 overflow-auto min-h-0 ${enableMobileView ? 'hidden md:block' : ''}`}>
+      <div
+        ref={containerRef}
+        className={`flex-1 overflow-auto min-h-0 ${enableMobileView ? 'hidden md:block' : ''}`}
+        style={{
+          willChange: virtualize ? 'scroll-position' : 'auto',
+          transform: 'translateZ(0)', // Force GPU acceleration
+        }}
+      >
         <table
-          className="w-full min-w-max border-separate border-spacing-0"
+          className="w-full border-separate border-spacing-0"
           style={{
-            tableLayout: 'fixed',
-            width: `${table.getTotalSize()}px`,
+            tableLayout,
+            contain: 'layout style paint',
+            ...(useFixedWidth && tableLayout === 'fixed'
+              ? { minWidth: `${table.getTotalSize()}px` }
+              : {}),
           }}
         >
           <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800">
@@ -475,7 +498,14 @@ export function ElegantTable<T>({
                     </th>
                   );
                 })}
-                {rowActions.length > 0 && <th className="w-12 bg-gray-50 dark:bg-gray-800" />}
+                {rowActions.length > 0 && (
+                  <th
+                    className="bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400 text-center"
+                    style={{ width: `${actionsColumnWidth}px` }}
+                  >
+                    {actionsHeader}
+                  </th>
+                )}
               </tr>
             ))}
           </thead>

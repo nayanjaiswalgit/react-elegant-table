@@ -1,4 +1,4 @@
-export { ElegantTable } from './ElegantTable';
+export { ElegantTable, type ElegantTableProps } from './ElegantTable';
 export * from './components/ColumnHeader';
 export * from './components/TableToolbar';
 export * from './components/SelectionBanner';
