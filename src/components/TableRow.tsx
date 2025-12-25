@@ -1,9 +1,10 @@
 import { memo } from 'react';
-import type { Row as TanStackRow } from '@tanstack/react-table';
+import type { Row as TanStackRow, Cell } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 import { HStack } from '../ui/Layout';
 import type React from 'react';
+import { EditableCell, CellEditType } from './EditableCell';
 
 interface TableRowProps<T> {
   row: TanStackRow<T>;
@@ -19,6 +20,13 @@ interface TableRowProps<T> {
   onMouseLeave?: () => void;
   onMenuToggle?: (rowId: string, button: HTMLButtonElement | null) => void;
   menuButtonRef?: (el: HTMLButtonElement | null, rowId: string) => void;
+  enableInlineEdit?: boolean;
+  isEditingCell?: (rowId: string, columnId: string) => boolean;
+  onCellDoubleClick?: (rowId: string, columnId: string) => void;
+  onCellEditSave?: (cell: Cell<T, unknown>, newValue: unknown) => void;
+  onCellEditCancel?: () => void;
+  getCellEditType?: (columnId: string) => CellEditType;
+  getCellEditOptions?: (columnId: string) => Array<{ value: unknown; label: string }>;
 }
 
 function TableRowComponent<T>({
@@ -35,9 +43,23 @@ function TableRowComponent<T>({
   onMouseLeave,
   onMenuToggle,
   menuButtonRef,
+  enableInlineEdit = false,
+  isEditingCell,
+  onCellDoubleClick,
+  onCellEditSave,
+  onCellEditCancel,
+  getCellEditType,
+  getCellEditOptions,
 }: TableRowProps<T>) {
   const isHovered = hoveredRowId === row.id && !row.getIsSelected();
   const isSelected = row.getIsSelected();
+
+  const handleCellDoubleClick = (cell: Cell<T, unknown>, e: React.MouseEvent) => {
+    if (enableInlineEdit && cell.column.id !== 'select') {
+      e.stopPropagation();
+      onCellDoubleClick?.(row.id, cell.column.id);
+    }
+  };
 
   return (
     <tr
@@ -55,21 +77,39 @@ function TableRowComponent<T>({
         isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
       }`}
     >
-      {row.getVisibleCells().map((cell) => (
-        <td
-          key={cell.id}
-          className="border-r border-gray-100 dark:border-gray-800 last:border-r-0"
-          style={{ width: `${cell.column.getSize()}px` }}
-        >
-          <div
-            className={`${
-              cell.column.id === 'select' ? '' : 'px-3 py-2'
-            } overflow-hidden text-ellipsis whitespace-nowrap`}
+      {row.getVisibleCells().map((cell) => {
+        const isEditing = isEditingCell?.(row.id, cell.column.id) ?? false;
+        const canEdit = enableInlineEdit && cell.column.id !== 'select';
+
+        return (
+          <td
+            key={cell.id}
+            className="border-r border-gray-100 dark:border-gray-800 last:border-r-0"
+            style={{ width: `${cell.column.getSize()}px` }}
+            onDoubleClick={(e) => handleCellDoubleClick(cell, e)}
           >
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </div>
-        </td>
-      ))}
+            <div
+              className={`${
+                cell.column.id === 'select' ? '' : 'px-3 py-2'
+              } overflow-hidden text-ellipsis whitespace-nowrap ${
+                canEdit && !isEditing ? 'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-text' : ''
+              }`}
+            >
+              {isEditing ? (
+                <EditableCell
+                  value={cell.getValue()}
+                  onSave={(newValue) => onCellEditSave?.(cell, newValue)}
+                  onCancel={() => onCellEditCancel?.()}
+                  type={getCellEditType?.(cell.column.id) ?? 'text'}
+                  options={getCellEditOptions?.(cell.column.id) ?? []}
+                />
+              ) : (
+                flexRender(cell.column.columnDef.cell, cell.getContext())
+              )}
+            </div>
+          </td>
+        );
+      })}
       {hasRowActions && (
         <td className="w-12">
           <HStack className="justify-center h-8">

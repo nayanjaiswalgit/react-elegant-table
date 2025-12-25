@@ -6,6 +6,7 @@ export * from './components/TableRow';
 export * from './components/LoadingRow';
 export * from './components/ActionMenu';
 export * from './components/ExportMenu';
+export * from './components/EditableCell';
 export * from './hooks';
 export * from './ui/Checkbox';
 export * from './ui/Layout';

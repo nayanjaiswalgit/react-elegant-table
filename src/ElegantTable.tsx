@@ -29,6 +29,8 @@ import {
   useColumnSizing,
 } from './hooks';
 import { useColumnOrdering } from './hooks/useColumnOrdering';
+import { useInlineEdit } from './hooks/useInlineEdit';
+import { CellEditType } from './components/EditableCell';
 
 interface ElegantTableProps<T> {
   data: T[];
@@ -62,6 +64,11 @@ interface ElegantTableProps<T> {
   enableColumnReordering?: boolean;
   initialColumnOrder?: string[];
   onColumnOrderChange?: (order: string[]) => void;
+  // Inline Editing
+  enableInlineEdit?: boolean;
+  onCellEdit?: (rowId: string, columnId: string, oldValue: unknown, newValue: unknown, rowData: T) => void;
+  getCellEditType?: (columnId: string) => CellEditType;
+  getCellEditOptions?: (columnId: string) => Array<{ value: unknown; label: string }>;
 }
 
 export function ElegantTable<T>({
@@ -91,6 +98,10 @@ export function ElegantTable<T>({
   enableColumnReordering = false,
   initialColumnOrder,
   onColumnOrderChange,
+  enableInlineEdit = false,
+  onCellEdit,
+  getCellEditType,
+  getCellEditOptions,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -107,6 +118,10 @@ export function ElegantTable<T>({
   const { columnOrder, onColumnOrderChange: handleColumnOrderChange } = useColumnOrdering({
     initialColumnOrder,
     onColumnOrderChange,
+  });
+
+  const { isEditing, startEditing, stopEditing, handleCellEdit } = useInlineEdit<T>({
+    onCellEdit,
   });
 
   const {
@@ -395,6 +410,16 @@ export function ElegantTable<T>({
                     menuButtonRef={(el, rowId) => {
                       if (el) menuButtonRefs.current.set(rowId, el);
                     }}
+                    enableInlineEdit={enableInlineEdit}
+                    isEditingCell={isEditing}
+                    onCellDoubleClick={startEditing}
+                    onCellEditSave={(cell, newValue) => {
+                      const oldValue = cell.getValue();
+                      handleCellEdit(row.id, cell.column.id, oldValue, newValue, row.original);
+                    }}
+                    onCellEditCancel={stopEditing}
+                    getCellEditType={getCellEditType}
+                    getCellEditOptions={getCellEditOptions}
                   />
                 ))}
 
