@@ -38,6 +38,7 @@ import { useInlineEdit } from './hooks/useInlineEdit';
 import { CellEditType } from './components/EditableCell';
 import { BulkAction } from './components/BulkActionsMenu';
 import { GlobalSearch } from './components/GlobalSearch';
+import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 
 interface ElegantTableProps<T> {
   data: T[];
@@ -95,6 +96,8 @@ interface ElegantTableProps<T> {
   enableColumnFiltering?: boolean;
   // Footer
   enableFooter?: boolean;
+  // Keyboard Navigation
+  enableKeyboardNavigation?: boolean;
 }
 
 export function ElegantTable<T>({
@@ -141,6 +144,7 @@ export function ElegantTable<T>({
   globalSearchPlaceholder,
   enableColumnFiltering = false,
   enableFooter = false,
+  enableKeyboardNavigation = false,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -167,6 +171,10 @@ export function ElegantTable<T>({
 
   const { isEditing, startEditing, stopEditing, handleCellEdit } = useInlineEdit<T>({
     onCellEdit,
+  });
+
+  const { focusedCell, setFocusedCell } = useKeyboardNavigation(table, {
+    enabled: enableKeyboardNavigation,
   });
 
   const {
