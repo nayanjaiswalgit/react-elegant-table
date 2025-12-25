@@ -20,3 +20,4 @@ export * from './utils/export';
 export * from './utils/columnGrouping';
 export * from './utils/aggregations';
 export * from './utils/clipboard';
+export * from './utils/tablePresets';
