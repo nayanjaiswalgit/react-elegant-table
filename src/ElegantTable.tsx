@@ -55,6 +55,8 @@ interface ElegantTableProps<T> {
   // Loading state
   isLoading?: boolean;
   loadingRowCount?: number;
+  // Export
+  enableExport?: boolean;
 }
 
 export function ElegantTable<T>({
@@ -80,6 +82,7 @@ export function ElegantTable<T>({
   manualSorting,
   isLoading = false,
   loadingRowCount = 5,
+  enableExport = true,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -225,10 +228,22 @@ export function ElegantTable<T>({
     [onRowAction, allRows, menuState.openRowId, closeMenu],
   );
 
+  const selectedRows = useMemo(
+    () => allRows.filter((row) => currentRowSelection[row.id]),
+    [allRows, currentRowSelection],
+  );
+
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Toolbar */}
-      <TableToolbar table={table} toolbar={toolbar} />
+      <TableToolbar
+        table={table}
+        toolbar={toolbar}
+        enableExport={enableExport}
+        allRows={allRows}
+        selectedRows={selectedRows}
+        hasSelection={hasSelection}
+      />
 
       {/* Selection Banner */}
       <SelectionBanner
