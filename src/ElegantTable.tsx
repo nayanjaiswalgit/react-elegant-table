@@ -35,6 +35,7 @@ import {
 import { useColumnOrdering } from './hooks/useColumnOrdering';
 import { useInlineEdit } from './hooks/useInlineEdit';
 import { CellEditType } from './components/EditableCell';
+import { BulkAction } from './components/BulkActionsMenu';
 
 interface ElegantTableProps<T> {
   data: T[];
@@ -82,6 +83,9 @@ interface ElegantTableProps<T> {
   enableColumnPinning?: boolean;
   columnPinning?: ColumnPinningState;
   onColumnPinningChange?: OnChangeFn<ColumnPinningState>;
+  // Bulk Actions
+  bulkActions?: BulkAction[];
+  onBulkAction?: (action: string, selectedRows: Row<T>[]) => void;
 }
 
 export function ElegantTable<T>({
@@ -122,6 +126,8 @@ export function ElegantTable<T>({
   enableColumnPinning = false,
   columnPinning,
   onColumnPinningChange,
+  bulkActions = [],
+  onBulkAction,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -340,6 +346,8 @@ export function ElegantTable<T>({
         allRows={allRows}
         selectedRows={selectedRows}
         hasSelection={hasSelection}
+        bulkActions={bulkActions}
+        onBulkAction={onBulkAction}
       />
 
       {/* Selection Banner */}
