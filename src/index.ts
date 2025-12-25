@@ -9,6 +9,7 @@ export * from './components/ExportMenu';
 export * from './components/EditableCell';
 export * from './components/ExpandedRow';
 export * from './components/BulkActionsMenu';
+export * from './components/GlobalSearch';
 export * from './hooks';
 export * from './ui/Checkbox';
 export * from './ui/Layout';

@@ -36,6 +36,7 @@ import { useColumnOrdering } from './hooks/useColumnOrdering';
 import { useInlineEdit } from './hooks/useInlineEdit';
 import { CellEditType } from './components/EditableCell';
 import { BulkAction } from './components/BulkActionsMenu';
+import { GlobalSearch } from './components/GlobalSearch';
 
 interface ElegantTableProps<T> {
   data: T[];
@@ -86,6 +87,9 @@ interface ElegantTableProps<T> {
   // Bulk Actions
   bulkActions?: BulkAction[];
   onBulkAction?: (action: string, selectedRows: Row<T>[]) => void;
+  // Global Search
+  enableGlobalSearch?: boolean;
+  globalSearchPlaceholder?: string;
 }
 
 export function ElegantTable<T>({
@@ -128,6 +132,8 @@ export function ElegantTable<T>({
   onColumnPinningChange,
   bulkActions = [],
   onBulkAction,
+  enableGlobalSearch = false,
+  globalSearchPlaceholder,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -139,6 +145,7 @@ export function ElegantTable<T>({
     left: [],
     right: [],
   });
+  const [globalFilter, setGlobalFilter] = useState('');
 
   // Custom hooks for cleaner state management
   const { columnSizing, onColumnSizingChange: handleColumnSizingChange } = useColumnSizing(
@@ -231,10 +238,12 @@ export function ElegantTable<T>({
       columnOrder,
       expanded: expanded ?? internalExpanded,
       columnPinning: columnPinning ?? internalColumnPinning,
+      globalFilter,
     },
     onSortingChange,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: setGlobalFilter,
     manualSorting,
     onRowSelectionChange,
     onColumnSizingChange: handleColumnSizingChange,
@@ -341,7 +350,18 @@ export function ElegantTable<T>({
       {/* Toolbar */}
       <TableToolbar
         table={table}
-        toolbar={toolbar}
+        toolbar={
+          <>
+            {enableGlobalSearch && (
+              <GlobalSearch
+                value={globalFilter}
+                onChange={setGlobalFilter}
+                placeholder={globalSearchPlaceholder}
+              />
+            )}
+            {toolbar}
+          </>
+        }
         enableExport={enableExport}
         allRows={allRows}
         selectedRows={selectedRows}
