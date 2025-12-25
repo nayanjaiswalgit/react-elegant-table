@@ -1,22 +1,68 @@
-import { memo } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { memo, useState } from 'react';
+import { ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import type { Header } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 
 interface ColumnHeaderProps<T> {
   header: Header<T, unknown>;
+  enableColumnReordering?: boolean;
+  onColumnDragStart?: (columnId: string) => void;
+  onColumnDragOver?: (columnId: string) => void;
+  onColumnDrop?: (columnId: string) => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
 }
 
-function ColumnHeaderComponent<T>({ header }: ColumnHeaderProps<T>) {
+function ColumnHeaderComponent<T>({
+  header,
+  enableColumnReordering = false,
+  onColumnDragStart,
+  onColumnDragOver,
+  onColumnDrop,
+  isDragging = false,
+  isDragOver = false,
+}: ColumnHeaderProps<T>) {
   const canSort = header.column.getCanSort();
   const isSorted = header.column.getIsSorted();
   const canResize = header.column.getCanResize();
   const isResizing = header.column.getIsResizing();
   const rawHeader = header.column.columnDef.header;
   const isStringHeader = typeof rawHeader === 'string';
+  const [showDragHandle, setShowDragHandle] = useState(false);
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = 'move';
+    onColumnDragStart?.(header.column.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    onColumnDragOver?.(header.column.id);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    onColumnDrop?.(header.column.id);
+  };
 
   return (
-    <div className={`relative flex items-center h-full group ${isResizing ? 'select-none' : ''}`}>
+    <div
+      className={`relative flex items-center h-full group ${isResizing ? 'select-none' : ''} ${
+        isDragging ? 'opacity-50' : ''
+      } ${isDragOver ? 'bg-blue-100 dark:bg-blue-900' : ''}`}
+      draggable={enableColumnReordering && !isResizing}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onMouseEnter={() => setShowDragHandle(true)}
+      onMouseLeave={() => setShowDragHandle(false)}
+    >
+      {enableColumnReordering && showDragHandle && (
+        <div className="flex-shrink-0 px-1 cursor-grab active:cursor-grabbing">
+          <GripVertical className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+        </div>
+      )}
       {isStringHeader ? (
         <button
           onClick={canSort ? header.column.getToggleSortingHandler() : undefined}

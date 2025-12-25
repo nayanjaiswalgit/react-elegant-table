@@ -28,6 +28,7 @@ import {
   useActionMenu,
   useColumnSizing,
 } from './hooks';
+import { useColumnOrdering } from './hooks/useColumnOrdering';
 
 interface ElegantTableProps<T> {
   data: T[];
@@ -57,6 +58,10 @@ interface ElegantTableProps<T> {
   loadingRowCount?: number;
   // Export
   enableExport?: boolean;
+  // Column Reordering
+  enableColumnReordering?: boolean;
+  initialColumnOrder?: string[];
+  onColumnOrderChange?: (order: string[]) => void;
 }
 
 export function ElegantTable<T>({
@@ -83,16 +88,26 @@ export function ElegantTable<T>({
   isLoading = false,
   loadingRowCount = 5,
   enableExport = true,
+  enableColumnReordering = false,
+  initialColumnOrder,
+  onColumnOrderChange,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
   // Custom hooks for cleaner state management
   const { columnSizing, onColumnSizingChange: handleColumnSizingChange } = useColumnSizing(
     initialColumnSizing,
     onColumnSizingChange,
   );
+
+  const { columnOrder, onColumnOrderChange: handleColumnOrderChange } = useColumnOrdering({
+    initialColumnOrder,
+    onColumnOrderChange,
+  });
 
   const {
     rowSelection: currentRowSelection,
@@ -167,6 +182,7 @@ export function ElegantTable<T>({
       columnVisibility,
       rowSelection: currentRowSelection,
       columnSizing,
+      columnOrder,
     },
     onSortingChange,
     onColumnFiltersChange: setColumnFilters,
@@ -174,6 +190,7 @@ export function ElegantTable<T>({
     manualSorting,
     onRowSelectionChange,
     onColumnSizingChange: handleColumnSizingChange,
+    onColumnOrderChange: handleColumnOrderChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -233,6 +250,40 @@ export function ElegantTable<T>({
     [allRows, currentRowSelection],
   );
 
+  // Column reordering handlers
+  const handleColumnDragStart = useCallback((columnId: string) => {
+    setDraggedColumn(columnId);
+  }, []);
+
+  const handleColumnDragOver = useCallback((columnId: string) => {
+    setDragOverColumn(columnId);
+  }, []);
+
+  const handleColumnDrop = useCallback(
+    (targetColumnId: string) => {
+      if (!draggedColumn || draggedColumn === targetColumnId) {
+        setDraggedColumn(null);
+        setDragOverColumn(null);
+        return;
+      }
+
+      const currentOrder = table.getAllLeafColumns().map((col) => col.id);
+      const draggedIndex = currentOrder.indexOf(draggedColumn);
+      const targetIndex = currentOrder.indexOf(targetColumnId);
+
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        const newOrder = [...currentOrder];
+        newOrder.splice(draggedIndex, 1);
+        newOrder.splice(targetIndex, 0, draggedColumn);
+        handleColumnOrderChange(newOrder);
+      }
+
+      setDraggedColumn(null);
+      setDragOverColumn(null);
+    },
+    [draggedColumn, table, handleColumnOrderChange],
+  );
+
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Toolbar */}
@@ -269,7 +320,17 @@ export function ElegantTable<T>({
                     style={{ width: `${header.getSize()}px`, position: 'relative' }}
                     className="border-r border-gray-100 dark:border-gray-800 last:border-r-0"
                   >
-                    {header.isPlaceholder ? null : <ColumnHeader header={header} />}
+                    {header.isPlaceholder ? null : (
+                      <ColumnHeader
+                        header={header}
+                        enableColumnReordering={enableColumnReordering}
+                        onColumnDragStart={handleColumnDragStart}
+                        onColumnDragOver={handleColumnDragOver}
+                        onColumnDrop={handleColumnDrop}
+                        isDragging={draggedColumn === header.column.id}
+                        isDragOver={dragOverColumn === header.column.id}
+                      />
+                    )}
                   </th>
                 ))}
                 {rowActions.length > 0 && <th className="w-12 bg-gray-50 dark:bg-gray-800" />}
