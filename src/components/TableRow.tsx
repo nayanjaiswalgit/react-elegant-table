@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { Row as TanStackRow, Cell } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, ChevronRight, ChevronDown } from 'lucide-react';
 import { HStack } from '../ui/Layout';
 import type React from 'react';
 import { EditableCell, CellEditType } from './EditableCell';
@@ -27,6 +27,8 @@ interface TableRowProps<T> {
   onCellEditCancel?: () => void;
   getCellEditType?: (columnId: string) => CellEditType;
   getCellEditOptions?: (columnId: string) => Array<{ value: unknown; label: string }>;
+  enableRowExpansion?: boolean;
+  showExpandButton?: boolean;
 }
 
 function TableRowComponent<T>({
@@ -50,15 +52,23 @@ function TableRowComponent<T>({
   onCellEditCancel,
   getCellEditType,
   getCellEditOptions,
+  enableRowExpansion = false,
+  showExpandButton = true,
 }: TableRowProps<T>) {
   const isHovered = hoveredRowId === row.id && !row.getIsSelected();
   const isSelected = row.getIsSelected();
+  const isExpanded = row.getIsExpanded();
 
   const handleCellDoubleClick = (cell: Cell<T, unknown>, e: React.MouseEvent) => {
     if (enableInlineEdit && cell.column.id !== 'select') {
       e.stopPropagation();
       onCellDoubleClick?.(row.id, cell.column.id);
     }
+  };
+
+  const handleExpandClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    row.toggleExpanded();
   };
 
   return (
@@ -77,9 +87,11 @@ function TableRowComponent<T>({
         isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
       }`}
     >
-      {row.getVisibleCells().map((cell) => {
+      {row.getVisibleCells().map((cell, cellIndex) => {
         const isEditing = isEditingCell?.(row.id, cell.column.id) ?? false;
         const canEdit = enableInlineEdit && cell.column.id !== 'select';
+        const isFirstDataCell = cellIndex === (row.getVisibleCells()[0]?.column.id === 'select' ? 1 : 0);
+        const shouldShowExpandButton = enableRowExpansion && showExpandButton && isFirstDataCell && !isEditing;
 
         return (
           <td
@@ -93,19 +105,34 @@ function TableRowComponent<T>({
                 cell.column.id === 'select' ? '' : 'px-3 py-2'
               } overflow-hidden text-ellipsis whitespace-nowrap ${
                 canEdit && !isEditing ? 'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-text' : ''
-              }`}
+              } ${shouldShowExpandButton ? 'flex items-center gap-2' : ''}`}
             >
-              {isEditing ? (
-                <EditableCell
-                  value={cell.getValue()}
-                  onSave={(newValue) => onCellEditSave?.(cell, newValue)}
-                  onCancel={() => onCellEditCancel?.()}
-                  type={getCellEditType?.(cell.column.id) ?? 'text'}
-                  options={getCellEditOptions?.(cell.column.id) ?? []}
-                />
-              ) : (
-                flexRender(cell.column.columnDef.cell, cell.getContext())
+              {shouldShowExpandButton && (
+                <button
+                  onClick={handleExpandClick}
+                  className="flex-shrink-0 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                  aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  )}
+                </button>
               )}
+              <div className={shouldShowExpandButton ? 'flex-1 min-w-0' : ''}>
+                {isEditing ? (
+                  <EditableCell
+                    value={cell.getValue()}
+                    onSave={(newValue) => onCellEditSave?.(cell, newValue)}
+                    onCancel={() => onCellEditCancel?.()}
+                    type={getCellEditType?.(cell.column.id) ?? 'text'}
+                    options={getCellEditOptions?.(cell.column.id) ?? []}
+                  />
+                ) : (
+                  flexRender(cell.column.columnDef.cell, cell.getContext())
+                )}
+              </div>
             </div>
           </td>
         );

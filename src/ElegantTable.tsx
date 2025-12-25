@@ -1,15 +1,17 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, Fragment } from 'react';
 import type React from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getExpandedRowModel,
   ColumnDef,
   SortingState,
   ColumnFiltersState,
   VisibilityState,
   RowSelectionState,
+  ExpandedState,
   type OnChangeFn,
   type Row,
 } from '@tanstack/react-table';
@@ -21,6 +23,7 @@ import { SelectionBanner } from './components/SelectionBanner';
 import { TableRow } from './components/TableRow';
 import { LoadingRow } from './components/LoadingRow';
 import { ActionMenu } from './components/ActionMenu';
+import { ExpandedRow } from './components/ExpandedRow';
 import {
   useTableVirtualization,
   useRowSelection,
@@ -69,6 +72,11 @@ interface ElegantTableProps<T> {
   onCellEdit?: (rowId: string, columnId: string, oldValue: unknown, newValue: unknown, rowData: T) => void;
   getCellEditType?: (columnId: string) => CellEditType;
   getCellEditOptions?: (columnId: string) => Array<{ value: unknown; label: string }>;
+  // Row Expansion
+  enableRowExpansion?: boolean;
+  renderExpandedContent?: (row: T) => React.ReactNode;
+  expanded?: ExpandedState;
+  onExpandedChange?: OnChangeFn<ExpandedState>;
 }
 
 export function ElegantTable<T>({
@@ -102,12 +110,17 @@ export function ElegantTable<T>({
   onCellEdit,
   getCellEditType,
   getCellEditOptions,
+  enableRowExpansion = false,
+  renderExpandedContent,
+  expanded,
+  onExpandedChange,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [internalExpanded, setInternalExpanded] = useState<ExpandedState>({});
 
   // Custom hooks for cleaner state management
   const { columnSizing, onColumnSizingChange: handleColumnSizingChange } = useColumnSizing(
@@ -198,6 +211,7 @@ export function ElegantTable<T>({
       rowSelection: currentRowSelection,
       columnSizing,
       columnOrder,
+      expanded: expanded ?? internalExpanded,
     },
     onSortingChange,
     onColumnFiltersChange: setColumnFilters,
@@ -206,9 +220,11 @@ export function ElegantTable<T>({
     onRowSelectionChange,
     onColumnSizingChange: handleColumnSizingChange,
     onColumnOrderChange: handleColumnOrderChange,
+    onExpandedChange: onExpandedChange ?? setInternalExpanded,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     enableRowSelection,
     columnResizeMode: 'onChange',
     enableColumnResizing: true,
@@ -387,40 +403,51 @@ export function ElegantTable<T>({
 
                 {/* Visible rows */}
                 {allRows.slice(startIndex, endIndex + 1).map((row) => (
-                  <TableRow
-                    key={row.id}
-                    row={row}
-                    rowHeight={estimatedRowHeight}
-                    hoveredRowId={hoveredRowId}
-                    hasRowActions={rowActions.length > 0}
-                    onRowClick={onRowClick || enableRowSelection ? handleRowClick : undefined}
-                    onPointerDown={() => startLongPress(row)}
-                    onPointerUp={endLongPress}
-                    onPointerLeave={endLongPress}
-                    onPointerCancel={endLongPress}
-                    onMouseEnter={() => setHoveredRowId(row.id)}
-                    onMouseLeave={() => {
-                      if (menuState.openRowId !== row.id) {
-                        setHoveredRowId(null);
+                  <Fragment key={row.id}>
+                    <TableRow
+                      key={row.id}
+                      row={row}
+                      rowHeight={estimatedRowHeight}
+                      hoveredRowId={hoveredRowId}
+                      hasRowActions={rowActions.length > 0}
+                      onRowClick={onRowClick || enableRowSelection ? handleRowClick : undefined}
+                      onPointerDown={() => startLongPress(row)}
+                      onPointerUp={endLongPress}
+                      onPointerLeave={endLongPress}
+                      onPointerCancel={endLongPress}
+                      onMouseEnter={() => setHoveredRowId(row.id)}
+                      onMouseLeave={() => {
+                        if (menuState.openRowId !== row.id) {
+                          setHoveredRowId(null);
+                        }
+                      }}
+                      onMenuToggle={(rowId) =>
+                        toggleMenu(rowId, menuButtonRefs.current.get(rowId) || null)
                       }
-                    }}
-                    onMenuToggle={(rowId) =>
-                      toggleMenu(rowId, menuButtonRefs.current.get(rowId) || null)
-                    }
-                    menuButtonRef={(el, rowId) => {
-                      if (el) menuButtonRefs.current.set(rowId, el);
-                    }}
-                    enableInlineEdit={enableInlineEdit}
-                    isEditingCell={isEditing}
-                    onCellDoubleClick={startEditing}
-                    onCellEditSave={(cell, newValue) => {
-                      const oldValue = cell.getValue();
-                      handleCellEdit(row.id, cell.column.id, oldValue, newValue, row.original);
-                    }}
-                    onCellEditCancel={stopEditing}
-                    getCellEditType={getCellEditType}
-                    getCellEditOptions={getCellEditOptions}
-                  />
+                      menuButtonRef={(el, rowId) => {
+                        if (el) menuButtonRefs.current.set(rowId, el);
+                      }}
+                      enableInlineEdit={enableInlineEdit}
+                      isEditingCell={isEditing}
+                      onCellDoubleClick={startEditing}
+                      onCellEditSave={(cell, newValue) => {
+                        const oldValue = cell.getValue();
+                        handleCellEdit(row.id, cell.column.id, oldValue, newValue, row.original);
+                      }}
+                      onCellEditCancel={stopEditing}
+                      getCellEditType={getCellEditType}
+                      getCellEditOptions={getCellEditOptions}
+                      enableRowExpansion={enableRowExpansion}
+                    />
+                    {enableRowExpansion && renderExpandedContent && (
+                      <ExpandedRow
+                        key={`${row.id}-expanded`}
+                        row={row}
+                        renderExpandedContent={renderExpandedContent}
+                        colSpan={columns.length + (rowActions.length > 0 ? 1 : 0)}
+                      />
+                    )}
+                  </Fragment>
                 ))}
 
                 {/* Bottom padding for virtualization */}
