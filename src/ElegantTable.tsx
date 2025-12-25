@@ -39,6 +39,7 @@ import { CellEditType } from './components/EditableCell';
 import { BulkAction } from './components/BulkActionsMenu';
 import { GlobalSearch } from './components/GlobalSearch';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
+import { MobileCard } from './components/MobileCard';
 
 interface ElegantTableProps<T> {
   data: T[];
@@ -98,6 +99,8 @@ interface ElegantTableProps<T> {
   enableFooter?: boolean;
   // Keyboard Navigation
   enableKeyboardNavigation?: boolean;
+  // Responsive
+  enableMobileView?: boolean;
 }
 
 export function ElegantTable<T>({
@@ -145,6 +148,7 @@ export function ElegantTable<T>({
   enableColumnFiltering = false,
   enableFooter = false,
   enableKeyboardNavigation = false,
+  enableMobileView = false,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -391,8 +395,32 @@ export function ElegantTable<T>({
         totalCount={allRows.length}
       />
 
+      {/* Mobile View */}
+      {enableMobileView && (
+        <div className="md:hidden flex-1 overflow-auto min-h-0 p-4">
+          <div className="space-y-3">
+            {isLoading ? (
+              Array.from({ length: loadingRowCount }).map((_, i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse"
+                />
+              ))
+            ) : allRows.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                {emptyMessage}
+              </div>
+            ) : (
+              allRows.map((row) => (
+                <MobileCard key={row.id} row={row} onRowClick={onRowClick} />
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Table Container */}
-      <div ref={containerRef} className="flex-1 overflow-auto min-h-0">
+      <div ref={containerRef} className={`flex-1 overflow-auto min-h-0 ${enableMobileView ? 'hidden md:block' : ''}`}>
         <table
           className="w-full min-w-max border-separate border-spacing-0"
           style={{
