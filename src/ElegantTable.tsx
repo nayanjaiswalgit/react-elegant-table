@@ -90,6 +90,8 @@ interface ElegantTableProps<T> {
   // Global Search
   enableGlobalSearch?: boolean;
   globalSearchPlaceholder?: string;
+  // Column Filtering
+  enableColumnFiltering?: boolean;
 }
 
 export function ElegantTable<T>({
@@ -134,6 +136,7 @@ export function ElegantTable<T>({
   onBulkAction,
   enableGlobalSearch = false,
   globalSearchPlaceholder,
+  enableColumnFiltering = false,
 }: ElegantTableProps<T>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -414,6 +417,7 @@ export function ElegantTable<T>({
                         isDragging={draggedColumn === header.column.id}
                         isDragOver={dragOverColumn === header.column.id}
                         enableColumnPinning={enableColumnPinning}
+                        enableColumnFiltering={enableColumnFiltering}
                       />
                     )}
                     </th>

@@ -2,6 +2,7 @@ import { memo, useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown, GripVertical, Pin, PinOff } from 'lucide-react';
 import type { Header } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
+import { ColumnFilterMenu } from './ColumnFilterMenu';
 
 interface ColumnHeaderProps<T> {
   header: Header<T, unknown>;
@@ -12,6 +13,7 @@ interface ColumnHeaderProps<T> {
   isDragging?: boolean;
   isDragOver?: boolean;
   enableColumnPinning?: boolean;
+  enableColumnFiltering?: boolean;
 }
 
 function ColumnHeaderComponent<T>({
@@ -23,6 +25,7 @@ function ColumnHeaderComponent<T>({
   isDragging = false,
   isDragOver = false,
   enableColumnPinning = false,
+  enableColumnFiltering = false,
 }: ColumnHeaderProps<T>) {
   const canSort = header.column.getCanSort();
   const isSorted = header.column.getIsSorted();
@@ -172,6 +175,9 @@ function ColumnHeaderComponent<T>({
           )}
         </div>
       )}
+
+      {/* Filter Menu */}
+      {enableColumnFiltering && <ColumnFilterMenu column={header.column} />}
 
       {/* Resize handle */}
       {canResize && (
