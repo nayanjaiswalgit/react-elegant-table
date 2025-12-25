@@ -101,6 +101,9 @@ interface ElegantTableProps<T> {
   enableKeyboardNavigation?: boolean;
   // Responsive
   enableMobileView?: boolean;
+  // Density
+  density?: 'compact' | 'normal' | 'comfortable';
+  onDensityChange?: (density: 'compact' | 'normal' | 'comfortable') => void;
 }
 
 export function ElegantTable<T>({
@@ -149,7 +152,16 @@ export function ElegantTable<T>({
   enableFooter = false,
   enableKeyboardNavigation = false,
   enableMobileView = false,
+  density = 'normal',
+  onDensityChange,
 }: ElegantTableProps<T>) {
+  // Density-based row heights
+  const densityHeights = {
+    compact: 36,
+    normal: 44,
+    comfortable: 56,
+  };
+  const rowHeight = densityHeights[density];
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
@@ -291,7 +303,7 @@ export function ElegantTable<T>({
     allRows.length,
     {
       enabled: virtualize,
-      rowHeight: estimatedRowHeight,
+      rowHeight: estimatedRowHeight || rowHeight,
     },
   );
 
@@ -476,7 +488,7 @@ export function ElegantTable<T>({
                   index={i}
                   columnCount={columns.length}
                   hasRowActions={rowActions.length > 0}
-                  rowHeight={estimatedRowHeight}
+                  rowHeight={estimatedRowHeight || rowHeight}
                 />
               ))
             ) : allRows.length === 0 ? (
@@ -506,7 +518,7 @@ export function ElegantTable<T>({
                     <TableRow
                       key={row.id}
                       row={row}
-                      rowHeight={estimatedRowHeight}
+                      rowHeight={estimatedRowHeight || rowHeight}
                       hoveredRowId={hoveredRowId}
                       hasRowActions={rowActions.length > 0}
                       onRowClick={onRowClick || enableRowSelection ? handleRowClick : undefined}
